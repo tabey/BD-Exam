@@ -2,6 +2,15 @@
 
 A PySpark pipeline for detecting vessel collision events and near-misses using AIS (Automatic Identification System) data from the Danish Maritime Authority.
 
+## Table of Contents
+
+1. [Detected Event](#Detected-Event)
+2. [Methodology](#Methodology)
+   - [Data Source](#Data-Source)
+   - [Pipeline Stages](#Pipeline-Stages)
+   - [Collision Criteria](#Collision-Criteria)
+3. [Usage](#Usage)
+
 ## Detected Event
 
 ![collision](results/collision_trajectory.png)
