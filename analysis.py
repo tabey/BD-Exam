@@ -103,7 +103,7 @@ def run_analysis():
         .withColumn("prev_lon", lag("Longitude").over(vessel_window)) \
         .withColumn("prev_timestamp", lag("# Timestamp").over(vessel_window))
     
-    # Simple coordinate movement (from main.py approach)
+    # Simple coordinate movement
     df_with_prev = df_with_prev.withColumn(
         "movement",
         sqrt(
@@ -119,7 +119,7 @@ def run_analysis():
         (col("movement") < 0.02)       # Maximum movement (GPS anomalies)
     ).drop("prev_lat", "prev_lon", "prev_timestamp", "movement")
     
-    # Filter for moving vessels (stricter SOG threshold from main.py)
+    # Filter for moving vessels
     MIN_SPEED = 1.0
     
     df_moving = df_no_jumps.filter(
@@ -143,7 +143,7 @@ def run_analysis():
         ~col("Ship type").isin(service_types) | col("Ship type").isNull()
     )
 
-    # Filter out rescue vessels by name pattern (from main.py)
+    # Filter out rescue vessels by name pattern
     df_moving = df_moving.filter(
         ~col("Name").rlike("(?i)(RESCUE|KBV)")
     )
@@ -151,7 +151,7 @@ def run_analysis():
     df_moving.persist(StorageLevel.MEMORY_AND_DISK)
     
     # Collision detection
-    COLLISION_DISTANCE_M = 5  # Back to 5m to match main.py
+    COLLISION_DISTANCE_M = 5  # Back to 5m
     TIME_TOLERANCE_SECONDS = 10
 
     from pyspark.sql.functions import floor as spark_floor
@@ -160,12 +160,12 @@ def run_analysis():
     df_bucketed = df_moving \
         .withColumn(
             "time_bucket",
-            (floor(unix_timestamp("# Timestamp") / 40) * 40).cast("timestamp")  # 40-sec windows like main.py
+            (floor(unix_timestamp("# Timestamp") / 40) * 40).cast("timestamp")  # 40-sec windows
         ) \
         .withColumn("grid_lat", spark_floor(col("Latitude") / GRID_SIZE) * GRID_SIZE) \
         .withColumn("grid_lon", spark_floor(col("Longitude") / GRID_SIZE) * GRID_SIZE)
 
-    # Aggregate to one position per vessel per time window (from main.py)
+    # Aggregate to one position per vessel per time window
     df_aggregated = df_bucketed.groupBy(
         "MMSI",
         "time_bucket",
