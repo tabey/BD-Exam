@@ -1,0 +1,26 @@
+# Ignore data and results (these are mounted at runtime via -v)
+data/
+results/
+
+# Ignore Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# Ignore Git
+.git/
+.gitignore
+
+# Ignore Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

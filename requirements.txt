@@ -1,0 +1,5 @@
+Cartopy==0.25.0
+matplotlib==3.10.9
+pandas==3.0.2
+pyspark==4.1.1
+shapely==2.1.2
