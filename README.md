@@ -19,16 +19,41 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 
 ![collision](results/collision_trajectory.png)
 
-On **2025-12-21 at 13:00:40 UTC**, the pipeline identified a close-quarters encounter between two pleasure craft in the Baltic Sea near 54.9113°N, 14.8627°E:
+**Incident Timestamp:** 21 December 2025, 13:00:40 UTC  
+**Location:** Baltic Sea (Coordinates: 54.9113°N, 14.8627°E)  
+**Severity Classification:** Near-Miss (Close Quarters Situation)  
+**Data Source:** Automated AIS Pipeline Analysis  
 
-| Vessel | MMSI | Type | Role |
-|--------|------|------|------|
-| ANRI | 219012544 | Pleasure | Overtaking vessel |
-| PROLINER | 219022341 | Pleasure | Vessel being overtaken |
+---
 
-**Minimum distance:** 4.6 meters
+### 1. Vessel Identification & Status
+The event involved two recreational pleasure craft operating in close proximity under similar navigational conditions:
 
-**Event classification:** Overtaking near-miss. Both vessels were proceeding south on similar courses when ANRI closed to within AIS accuracy range while overtaking PROLINER. ANRI subsequently altered course approximately 10° to port, consistent with an avoidance maneuver.
+| Role | Vessel Name | MMSI | Type | Navigational Status (COLREGs) | Course |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Overtaking (Give-Way)** | ANRI | 219012544 | Pleasure Craft | Overtaking (Rule 13) | Southbound |
+| **Overtaken (Stand-On)** | PROLINER | 219022341 | Pleasure Craft | Being Overtaken (Rule 13) | Southbound |
+
+---
+
+### 2. Event Dynamics & Trajectory Analysis
+At the recorded timestamp, the automated monitoring system detected a critical reduction in the **Distance to Closest Point of Approach (DCPA)** between the two targets. Both vessels were proceeding on nearly identical southerly headings, creating a longitudinal overtaking scenario.
+
+*   **Minimum Separation:** The vessels converged to a minimum lateral separation of **4.6 meters**. This distance falls well within the threshold for a "close quarters situation," posing a significant risk of collision given the typical maneuverability constraints of pleasure craft in open water.
+*   **AIS Accuracy Context:** The convergence occurred within the margin of error for standard AIS positioning, suggesting the vessels were visually identifiable and likely within direct line-of-sight prior to the maneuver.
+
+---
+
+### 3. Maneuver Assessment
+Post-convergence analysis indicates a corrective action taken by the overtaking vessel (**ANRI**) to mitigate collision risk:
+
+*   **Action Taken:** ANRI executed a course alteration of approximately **10° to Port**.
+*   **Compliance Evaluation:** While Rule 13 of the COLREGs mandates that the overtaking vessel keep clear, a port turn in a southbound overtaking scenario is a valid avoidance maneuver provided it does not cross the bow of the stand-on vessel dangerously. The adjustment successfully increased the CPA, resolving the immediate hazard.
+
+---
+
+### 4. Operational Context
+This incident highlights the importance of vigilant watchkeeping in recreational boating, particularly in high-traffic zones of the Baltic Sea where pleasure craft often operate. The narrow margin of 4.6 meters suggests a failure in early situational awareness or communication between the skippers, necessitating a last-second evasive action.
 
 ## Methodology
 
