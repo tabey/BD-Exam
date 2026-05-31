@@ -37,7 +37,7 @@ The event involved two recreational pleasure craft operating in close proximity 
 ---
 
 ### 2. Event Dynamics & Trajectory Analysis
-At the recorded timestamp, the automated monitoring system detected a critical reduction in the **Distance to Closest Point of Approach (DCPA)** between the two targets. Both vessels were proceeding on nearly identical southerly headings, creating a longitudinal overtaking scenario.
+At the recorded timestamp, the analysis pipeline detected a possible collision between the two targets. Both vessels were proceeding on nearly identical southerly headings, creating a longitudinal overtaking scenario.
 
 *   **Minimum Separation:** The vessels converged to a minimum lateral separation of **4.6 meters**. This distance falls well within the threshold for a "close quarters situation," posing a significant risk of collision given the typical maneuverability constraints of pleasure craft in open water.
 *   **AIS Accuracy Context:** The convergence occurred within the margin of error for standard AIS positioning, suggesting the vessels were visually identifiable and likely within direct line-of-sight prior to the maneuver.
