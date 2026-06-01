@@ -8,6 +8,7 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 2. [Methodology](#methodology)
    - [Data Source](#data-source)
    - [Pipeline Stages](#pipeline-stages)
+   - [Performance Optimizations](performance-optimizations)
    - [Collision Criteria](#collision-criteria)
 3. [Data Setup](#data-setup)
 4. [Usage](#usage)
@@ -21,39 +22,46 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 
 **Incident Timestamp:** 21 December 2025, 13:00:40 UTC  
 **Location:** Baltic Sea (Coordinates: 54.9113°N, 14.8627°E)  
-**Severity Classification:** Near-Miss (Close Quarters Situation)  
-**Data Source:** Automated AIS Pipeline Analysis  
+
+Based on the trajectory data, this is the chronological vessel behavior:
 
 ---
 
-### 1. Vessel Identification & Status
-The event involved two recreational pleasure craft operating in close proximity under similar navigational conditions:
+**BEFORE THE COLLISION**
 
-| Role | Vessel Name | MMSI | Type | Navigational Status (COLREGs) | Course |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Overtaking (Give-Way)** | ANRI | 219012544 | Pleasure Craft | Overtaking (Rule 13) | Southbound |
-| **Overtaken (Stand-On)** | PROLINER | 219022341 | Pleasure Craft | Being Overtaken (Rule 13) | Southbound |
+**ANRI (MMSI 219012544)**
+- Heading: Northwest (COG ~302-309°)
+- Speed: Slow (~3 knots)
+- Direction of travel: From the southeast toward the northwest
 
----
+**PROLINER (MMSI 219022341)**
+- Heading: Southeast (COG ~137-159°)
+- Speed: High (~28-29 knots)
+- Direction of travel: From the northwest toward the southeast
 
-### 2. Event Dynamics & Trajectory Analysis
-At the recorded timestamp, the analysis pipeline detected a possible collision between the two targets. Both vessels were proceeding on nearly identical southerly headings, creating a longitudinal overtaking scenario.
-
-*   **Minimum Separation:** The vessels converged to a minimum lateral separation of **4.6 meters**. This distance falls well within the threshold for a "close quarters situation," posing a significant risk of collision given the typical maneuverability constraints of pleasure craft in open water.
-*   **AIS Accuracy Context:** The convergence occurred within the margin of error for standard AIS positioning, suggesting the vessels were visually identifiable and likely within direct line-of-sight prior to the maneuver.
+They were on a **near head-on collision course** - ANRI going northwest, PROLINER going southeast.
 
 ---
 
-### 3. Maneuver Assessment
-Post-convergence analysis indicates a corrective action taken by the overtaking vessel (**ANRI**) to mitigate collision risk:
+**AROUND THE COLLISION (13:00-13:01)**
 
-*   **Action Taken:** ANRI executed a course alteration of approximately **10° to Port**.
-*   **Compliance Evaluation:** While Rule 13 of the COLREGs mandates that the overtaking vessel keep clear, a port turn in a southbound overtaking scenario is a valid avoidance maneuver provided it does not cross the bow of the stand-on vessel dangerously. The adjustment successfully increased the CPA, resolving the immediate hazard.
+Both vessels attempted evasive maneuvers:
+- PROLINER turned hard to starboard (west, COG ~273°) and decelerated from ~29 knots to nearly stopped
+- ANRI turned sharply to port (northeast, COG ~28°) and slowed
 
 ---
 
-### 4. Operational Context
-This incident highlights the importance of vigilant watchkeeping in recreational boating, particularly in high-traffic zones of the Baltic Sea where pleasure craft often operate. The narrow margin of 4.6 meters suggests a failure in early situational awareness or communication between the skippers, necessitating a last-second evasive action.
+**AFTER THE COLLISION (13:02 onwards)**
+
+**Both vessels headed northwest at high speed:**
+- ANRI: COG ~332-343°, SOG ~19 knots
+- PROLINER: COG ~325-338°, SOG ~25 knots
+
+---
+
+**INTERPRETATION**
+
+The most telling indication of collision is that **both vessels proceeded in the same direction after the event** - northwest at high speed. This strongly suggests they coordinated (likely via VHF radio) to proceed together to a nearby harbor or marina to exchange information and report the incident. The fact that PROLINER was traveling *faster* after the collision than ANRI could indicate either that PROLINER's damage was less severe, or that they were both racing to reach port before their vessels took on more water.
 
 ## Methodology
 
@@ -71,6 +79,18 @@ This incident highlights the importance of vigilant watchkeeping in recreational
 6. **Spatiotemporal Join** — Self-join on time bucket and spatial grid (0.01° cells)
 7. **Distance Calculation** — Haversine formula between vessel pairs
 8. **Deduplication** — Encounter grouping with 5-minute gap threshold, closest-point selection
+
+### Performance Optimizations
+
+Processing a month of AIS data (tens of millions of records) requires careful resource management. Key optimizations include:
+
+- **PySpark over Pandas** — Distributed processing handles datasets larger than memory, with lazy evaluation avoiding unnecessary computation
+- **Bounding box pre-filter** — Simple lat/lon range comparison eliminates ~95% of records before the expensive Haversine distance calculation
+- **Spatial grid bucketing** — 0.01° grid cells (~1km) constrain the self-join to only compare vessels in the same geographic area, preventing an O(n²) explosion of pairs
+- **Temporal aggregation** — 40-second windows reduce ping frequency noise and dramatically shrink the join space
+- **Strategic caching** — `.persist(StorageLevel.MEMORY_AND_DISK)` at critical boundaries (after filtering, before the join) breaks the lineage chain and avoids recomputing the entire pipeline on each action
+- **Coordinate movement filter** — Simple Euclidean distance between consecutive pings (`sqrt(Δlat² + Δlon²)`) for GPS jump detection, avoiding an additional Haversine computation per record
+- **Intermediate column decomposition** — Breaking the Haversine formula into separate `withColumn` steps prevents deeply nested expression trees that exceed Python's recursion limit and complicate Spark's query optimizer
 
 ### Collision Criteria
 
@@ -97,9 +117,7 @@ Alternatively, you can place your own .csv files directly into the `data/` folde
 ## Usage
 ### Docker (Recommended)
 
-Pull the image from Docker Hub and run the pipeline with your local data and results directories mounted
-
-https://hub.docker.com/r/tabeh/ais-collision-detector
+Pull the image from Docker Hub ([link](https://hub.docker.com/r/tabeh/ais-collision-detector)) and run the pipeline with your local data and results directories mounted
 
 ```bash
 # Pull the image
