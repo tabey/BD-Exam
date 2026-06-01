@@ -202,8 +202,6 @@ def run_analysis():
         (col("v1.grid_lon") == col("v2.grid_lon")) &
         (col("v1.MMSI") < col("v2.MMSI"))
     )
-
-    # REMOVED: Convergence check - too strict for crossing courses
     
     # Both vessels must be moving
     df_pairs = df_pairs.filter(
