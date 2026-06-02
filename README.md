@@ -54,7 +54,7 @@ This appears the most definitive:
 ## Methodology
 
 ### Data Source
-- 31 days of AIS data (December 2025) from the Danish Maritime Authority
+- 31 days of AIS data (December 2021) from the Danish Maritime Authority
 - Search area: 50 nautical mile radius centered on 55.225°N, 14.245°E
 
 ### Pipeline Stages
