@@ -17,17 +17,26 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 
 ## Detected Events
 
-### Assessment of Potential Collisions
+**Event #0 (2021-12-24): WINDCAT 43 & GEO OCEAN V**
 
-**Event #2 (2021-12-13): KARIN HOEJ & MV SCOT CARRIER**
-![collision](results/collision_event_2.png)
-- **Vessel 232018267 (Cargo)**: Maintains a steady 12 knots until **02:27:29**, then shows a dramatic, unnatural deceleration sequence: 11.1 → 10.1 → 8.0 → 7.0 → 6.1 → 5.1 → 4.7 → 3.9 → 3.4 → 3.0 knots within ~3 minutes.
-- **Simultaneous course change**: Its COG shifts from ~269° to ~270°, then begins erratic swinging (267°, 263°, 258°, etc.) – consistent with loss of control or evasive action.
-- **Vessel 219021240 (Other)**: Also shows an unnatural speed drop from 6.1 to 10.3 knots with a sharp course change from ~222° to ~258° at the exact same timestamp (**02:27:29**).
-This **simultaneous, abrupt deceleration and course disruption** in both vessels strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
+![collision](results/collision_event_0.png)
+
+1. **Low-speed interaction** (both < 2 knots)
+2. The HSC's turn from ~3° to ~272° happens at **very low speed** (0.2-1.5 knots)
+3. This could represent:
+   - **Maneuvering** in close quarters (turning to avoid)
+   - **Low-speed contact** (bumping at low speed)
+   - **Station-keeping/navigation** near a stationary object
+
+The fact that **both vessels essentially stop moving** (SOG ~0.1-0.8 knots) for several minutes around 09:22 suggests this might be:
+- **Docking/berthing operation** 
+- **Station-keeping** near a fixed point
+- **Very low-speed near-miss**
 
 **Event #1 (2021-12-29): SILLE BOB & JANNE**
+
 ![collision](results/collision_event_1.png)
+
 Looking at the behavior:
 - Both pleasure vessels decelerate to 0.0-0.9 knots at the closest point.
 - They remain in extremely close proximity (~3.9m) for an extended period (over 30 minutes).
@@ -39,6 +48,29 @@ This **could** represent:
 
 The sustained very close proximity and simultaneous near-stop are more characteristic of intentional docking than an accidental high-energy collision.
 
+**Event #2 (2021-12-13): KARIN HOEJ & MV SCOT CARRIER**
+
+![collision](results/collision_event_2.png)
+
+- **Vessel 232018267 (Cargo)**: Maintains a steady 12 knots until **02:27:29**, then shows a dramatic, unnatural deceleration sequence: 11.1 → 10.1 → 8.0 → 7.0 → 6.1 → 5.1 → 4.7 → 3.9 → 3.4 → 3.0 knots within ~3 minutes.
+- **Simultaneous course change**: Its COG shifts from ~269° to ~270°, then begins erratic swinging (267°, 263°, 258°, etc.) – consistent with loss of control or evasive action.
+- **Sudden cessation of transmissions**: 219021240 losing trajectory data at the **exact moment** both vessels show abnormal kinematic changes (speed drop, course change) is highly suspicious.
+- 
+Possible reasons for AIS signal loss at that instant:
+   - **Power failure** (collision damage to electrical systems)
+   - **Antenna/transceiver damage** (physical impact)
+   - **Vessel sinking or listing** causing antenna submersion
+   - **Intentional shutdown** in an emergency (unlikely but possible)
+   - **Equipment malfunction** coinciding exactly with the encounter (statistically improbable)
+
+This **simultaneous, abrupt deceleration and course disruption** strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
+
+### Final Ranking by Collision Likelihood
+
+1. **Event #2**: Strongest evidence - cargo vessel emergency deceleration from 12→3 knots with simultaneous course disruption
+2. **Event #1**: Could be collision OR docking between pleasure craft
+3. **Event #0**: Least likely to be significant collision - appears to be low-speed maneuvering
+
 **Event #0 (2021-12-24): WINDCAT 43 & GEO OCEAN V**
 ![collision](results/collision_event_0.png)
 This appears the most definitive:
@@ -47,9 +79,13 @@ This appears the most definitive:
 - Both vessels show extreme erratic movement post-encounter
 
 ### Final Ranking by Collision Likelihood
-1. **Event #0**: Highest confidence – high-speed encounter with drastic maneuver
-2. **Event #2**: Moderate-high confidence – simultaneous emergency deceleration of both vessels
-3. **Event #1**: Lower confidence – could be collision or docking; needs additional context
+
+1. **Event #2** → **Highest likelihood of true collision**  
+   - Kinematic disruption + simultaneous AIS failure in one vessel + continued but abnormal track in the other.
+2. **Event #1** → **Possible collision or docking**  
+   - Both vessels remain active post‑encounter; low speeds throughout.
+3. **Event #0** → **Least convincing as collision**  
+   - Low‑speed interaction; resembles station‑keeping or close maneuvering.
 
 ## Methodology
 
