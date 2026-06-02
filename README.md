@@ -55,7 +55,7 @@ The sustained very close proximity and simultaneous near-stop are more character
 - **Vessel 232018267 (Cargo)**: Maintains a steady 12 knots until **02:27:29**, then shows a dramatic, unnatural deceleration sequence: 11.1 → 10.1 → 8.0 → 7.0 → 6.1 → 5.1 → 4.7 → 3.9 → 3.4 → 3.0 knots within ~3 minutes.
 - **Simultaneous course change**: Its COG shifts from ~269° to ~270°, then begins erratic swinging (267°, 263°, 258°, etc.) – consistent with loss of control or evasive action.
 - **Sudden cessation of transmissions**: 219021240 losing trajectory data at the **exact moment** both vessels show abnormal kinematic changes (speed drop, course change) is highly suspicious.
-- 
+
 Possible reasons for AIS signal loss at that instant:
    - **Power failure** (collision damage to electrical systems)
    - **Antenna/transceiver damage** (physical impact)
