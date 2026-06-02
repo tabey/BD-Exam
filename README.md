@@ -65,21 +65,6 @@ Possible reasons for AIS signal loss at that instant:
 
 This **simultaneous, abrupt deceleration and course disruption** strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
 
-### Final Ranking by Collision Likelihood
-
-1. **Event #2**: Strongest evidence - cargo vessel emergency deceleration from 12→3 knots with simultaneous course disruption
-2. **Event #1**: Could be collision OR docking between pleasure craft
-3. **Event #0**: Least likely to be significant collision - appears to be low-speed maneuvering
-
-**Event #0 (2021-12-24): WINDCAT 43 & GEO OCEAN V**
-![collision](results/collision_event_0.png)
-This appears the most definitive:
-- The HSC's violent 180° turn at speed (22+ knots)
-- Minimum distance of 3.3m
-- Both vessels show extreme erratic movement post-encounter
-
-### Final Ranking by Collision Likelihood
-
 1. **Event #2** → **Highest likelihood of true collision**  
    - Kinematic disruption + simultaneous AIS failure in one vessel + continued but abnormal track in the other.
 2. **Event #1** → **Possible collision or docking**  
