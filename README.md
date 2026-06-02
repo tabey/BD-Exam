@@ -46,7 +46,7 @@ This **could** represent:
 1. A low-speed collision between maneuvering pleasure craft
 2. Or a docking maneuver where one vessel comes alongside another
 
-The sustained very close proximity and simultaneous near-stop are more characteristic of intentional docking than an accidental high-energy collision.
+The sustained very close proximity near shore and simultaneous near-stop are more characteristic of intentional docking than an accidental high-energy collision.
 
 **Event #2 (2021-12-13): KARIN HOEJ & MV SCOT CARRIER**
 
