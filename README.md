@@ -65,6 +65,8 @@ Possible reasons for AIS signal loss at that instant:
 
 This **simultaneous, abrupt deceleration and course disruption** strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
 
+### Final Ranking by Collision Likelihood
+
 1. **Event #2** → **Highest likelihood of true collision**  
    - Kinematic disruption + simultaneous AIS failure in one vessel + continued but abnormal track in the other.
 2. **Event #1** → **Possible collision or docking**  
