@@ -4,69 +4,57 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 
 ## Table of Contents
 
-1. [Detected Event](#detected-event)
+1. [Detected Events](#detected-events)
 2. [Methodology](#methodology)
    - [Data Source](#data-source)
    - [Pipeline Stages](#pipeline-stages)
    - [Performance Optimizations](performance-optimizations)
    - [Collision Criteria](#collision-criteria)
-3. [Data Setup](#data-setup)
-4. [Usage](#usage)
+3. [Usage](#usage)
    - [Docker (Recommended)](#docker-recommended)
    - [Local](#local)
-5. [Output](#output)
+4. [Output](#output)
 
-## Detected Event
+## Detected Events
 
-![collision](results/collision_trajectory.png)
+### Assessment of Potential Collisions
 
-**Incident Timestamp:** 21 December 2025, 13:00:40 UTC  
-**Location:** Baltic Sea (Coordinates: 54.9113°N, 14.8627°E)  
+**Event #2 (2021-12-13): KARIN HOEJ & MV SCOT CARRIER**
+![collision](results/collision_event_2.png)
+- **Vessel 232018267 (Cargo)**: Maintains a steady 12 knots until **02:27:29**, then shows a dramatic, unnatural deceleration sequence: 11.1 → 10.1 → 8.0 → 7.0 → 6.1 → 5.1 → 4.7 → 3.9 → 3.4 → 3.0 knots within ~3 minutes.
+- **Simultaneous course change**: Its COG shifts from ~269° to ~270°, then begins erratic swinging (267°, 263°, 258°, etc.) – consistent with loss of control or evasive action.
+- **Vessel 219021240 (Other)**: Also shows an unnatural speed drop from 6.1 to 10.3 knots with a sharp course change from ~222° to ~258° at the exact same timestamp (**02:27:29**).
+This **simultaneous, abrupt deceleration and course disruption** in both vessels strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
 
-Based on the trajectory data, this is the chronological vessel behavior:
+**Event #1 (2021-12-29): SILLE BOB & JANNE**
+![collision](results/collision_event_1.png)
+Looking at the behavior:
+- Both pleasure vessels decelerate to 0.0-0.9 knots at the closest point.
+- They remain in extremely close proximity (~3.9m) for an extended period (over 30 minutes).
+- Both show coordinated, gentle turning movements afterward.
 
----
+This **could** represent:
+1. A low-speed collision between maneuvering pleasure craft
+2. Or a docking maneuver where one vessel comes alongside another
 
-**BEFORE THE COLLISION**
+The sustained very close proximity and simultaneous near-stop are more characteristic of intentional docking than an accidental high-energy collision.
 
-**ANRI (MMSI 219012544)**
-- Heading: Northwest (COG ~302-309°)
-- Speed: Slow (~3 knots)
-- Direction of travel: From the southeast toward the northwest
+**Event #0 (2021-12-24): WINDCAT 43 & GEO OCEAN V**
+![collision](results/collision_event_0.png)
+This appears the most definitive:
+- The HSC's violent 180° turn at speed (22+ knots)
+- Minimum distance of 3.3m
+- Both vessels show extreme erratic movement post-encounter
 
-**PROLINER (MMSI 219022341)**
-- Heading: Southeast (COG ~137-159°)
-- Speed: High (~28-29 knots)
-- Direction of travel: From the northwest toward the southeast
-
-They were on a **near head-on collision course** - ANRI going northwest, PROLINER going southeast.
-
----
-
-**AROUND THE COLLISION (13:00-13:01)**
-
-Both vessels attempted evasive maneuvers:
-- PROLINER turned hard to starboard (west, COG ~273°) and decelerated from ~29 knots to nearly stopped
-- ANRI turned sharply to port (northeast, COG ~28°) and slowed
-
----
-
-**AFTER THE COLLISION (13:02 onwards)**
-
-**Both vessels headed northwest at high speed:**
-- ANRI: COG ~332-343°, SOG ~19 knots
-- PROLINER: COG ~325-338°, SOG ~25 knots
-
----
-
-**INTERPRETATION**
-
-The most telling indication of collision is that **both vessels proceeded in the same direction after the event** - northwest at high speed. This strongly suggests they coordinated (likely via VHF radio) to proceed together to a nearby harbor or marina to exchange information and report the incident. The fact that PROLINER was traveling *faster* after the collision than ANRI could indicate either that PROLINER's damage was less severe, or that they were both racing to reach port before their vessels took on more water.
+### Final Ranking by Collision Likelihood
+1. **Event #0**: Highest confidence – high-speed encounter with drastic maneuver
+2. **Event #2**: Moderate-high confidence – simultaneous emergency deceleration of both vessels
+3. **Event #1**: Lower confidence – could be collision or docking; needs additional context
 
 ## Methodology
 
 ### Data Source
-- 31 days of AIS data (December 2025) from the Danish Maritime Authority
+- 31 days of AIS data (December 2021) from the Danish Maritime Authority
 - Search area: 50 nautical mile radius centered on 55.225°N, 14.245°E
 
 ### Pipeline Stages
@@ -101,19 +89,6 @@ Processing a month of AIS data (tens of millions of records) requires careful re
 | Minimum SOG | > 1.0 knot | Both vessels underway |
 | Encounter gap | > 5 minutes | Separate close-quarters events |
 
-## Data Setup
-
-The pipeline expects AIS data in CSV format within the `data/` directory. 
-
-To download the December 2025 dataset from the Danish Maritime Authority, use the provided script which fetches all files in parallel:
-
-```bash
-chmod +x dl-data.sh
-./dl-data.sh
-```
-
-Alternatively, you can place your own .csv files directly into the `data/` folder. The schema will be automatically inferred from the files present.
-
 ## Usage
 ### Docker (Recommended)
 
@@ -132,15 +107,13 @@ docker run -it --rm \
 
 Note: The `-v` flags mount your local directories into the container. Ensure your AIS CSV files are in the `data/` folder before running. The output visualization and CSVs will be saved to your local `results/` folder.
 
-To build the image locally from the Dockerfile:
+To build and run the image locally using the Dockerfile:
 
 ```bash
+# Build
 docker build -t ais-collision-detector .
-```
 
-and run it with:
-
-```bash
+# Run
 docker run -it --rm \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/results:/app/results \
@@ -163,5 +136,5 @@ python main.py
 Upon completion, the following files will be generated in the `results/` directory:
 
 - `collision_event.csv` — Collision event details
-- `collision_trajectory.csv` — 20-minute trajectory data (10 min around the event)
-- `collision_trajectory.png` — Visualization with search area overview and trajectory detail
+- `collision_trajectory.csv` — 20-minute trajectory data (10 min around the event) for each event
+- `collision_event_i.png` — Visualizations with search area overview and trajectory detail for each event

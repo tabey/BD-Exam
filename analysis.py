@@ -31,7 +31,7 @@ def run_analysis():
     
     # Infer from one file
     df_sample = spark.read.csv(
-        'data/aisdk-2025-12-31.csv',
+        'data/aisdk-2021-12-31.csv',
         header=True,
         inferSchema=True,
         timestampFormat="dd/MM/yyyy HH:mm:ss",
@@ -272,54 +272,73 @@ def run_analysis():
         .drop("prev_t1", "new_encounter", "encounter_id", "rank")
 
 
-    print(f"Unique collision events: {df_unique_collisions.count()}")
+    collision_count = df_unique_collisions.count()
+    print(f"Unique collision events: {collision_count}")
     df_unique_collisions.orderBy("distance_m").show(20, truncate=False)
 
-    # Extract trajectory for the first collision event
-    if df_unique_collisions.count() > 0:
-        # Get the collision details
-        collision_row = df_unique_collisions.first()
-        mmsi_1 = collision_row["mmsi_1"]
-        mmsi_2 = collision_row["mmsi_2"]
-        collision_time = collision_row["timestamp_1"]
+    # Extract trajectories for all collision events
+    if collision_count > 0:
+        # Collect collision events to the driver
+        collision_events = df_unique_collisions.collect()
+        
+        from functools import reduce
+        from pyspark.sql import DataFrame
+        
+        all_trajectories = []
+        
+        for i, collision_row in enumerate(collision_events):
+            mmsi_1 = collision_row["mmsi_1"]
+            mmsi_2 = collision_row["mmsi_2"]
+            collision_time = collision_row["timestamp_1"]
 
-        # Calculate time window
-        start_time = collision_time - timedelta(minutes=10)
-        end_time = collision_time + timedelta(minutes=10)
+            # Calculate time window
+            start_time = collision_time - timedelta(minutes=10)
+            end_time = collision_time + timedelta(minutes=10)
 
-        # Use df_clean instead of df_moving to get the full trajectory
-        df_trajectory = df_clean.filter(
-            ((col("MMSI") == mmsi_1) | (col("MMSI") == mmsi_2)) &
-            (col("# Timestamp") >= lit(start_time)) &
-            (col("# Timestamp") <= lit(end_time))
-        ).select(
-            col("MMSI"),
-            col("# Timestamp").alias("timestamp"),
-            col("Latitude"),
-            col("Longitude"),
-            col("SOG"),
-            col("COG"),
-            col("Ship type")
-        ).orderBy("MMSI", "timestamp")
-
+            # Use df_clean to get the full trajectory
+            df_traj = df_clean.filter(
+                            ((col("MMSI") == mmsi_1) | (col("MMSI") == mmsi_2)) &
+                            (col("# Timestamp") >= lit(start_time)) &
+                            (col("# Timestamp") <= lit(end_time))
+                        ).select(
+                            col("MMSI"),
+                            col("# Timestamp").alias("timestamp"),
+                            col("Latitude"),
+                            col("Longitude"),
+                            col("SOG"),
+                            col("COG"),
+                            col("Ship type")
+                        ).withColumn("event_id", lit(i)) \
+                         .orderBy("MMSI", "timestamp")  # Order per vessel
+            
+            all_trajectories.append(df_traj)
+        
+        # Union trajectory DataFrames
+        df_all_trajectories = reduce(DataFrame.unionByName, all_trajectories)
+        
+        # Order the final output
+        df_all_trajectories = df_all_trajectories.orderBy("event_id", "MMSI", "timestamp")
+        
         # Check if we got any data
-        trajectory_count = df_trajectory.count()
-        print(f"Trajectory points found: {trajectory_count}")
+        trajectory_count = df_all_trajectories.count()
+        print(f"Total trajectory points found: {trajectory_count}")
 
         if trajectory_count > 0:
-            df_trajectory.show(50, truncate=False)
-            
-            # Save trajectory data for visualize.py
-            pd_trajectory = df_trajectory.toPandas()
-            pd_trajectory.to_csv('results/collision_trajectory.csv', index=False)
+            # Save all trajectories to a single CSV
+            pd_all_traj = df_all_trajectories.toPandas()
+            pd_all_traj.to_csv('results/collision_trajectory.csv', index=False)
 
         # Save collision event details
         pd_collisions = df_unique_collisions.toPandas()
+        # Add event_id to collision event CSV so visualize.py can link them
+        pd_collisions['event_id'] = range(len(pd_collisions))
         pd_collisions.to_csv('results/collision_event.csv', index=False)
 
-        # Get vessel details
+        # Get vessel details for all involved vessels
+        all_mmsis = [row["mmsi_1"] for row in collision_events] + [row["mmsi_2"] for row in collision_events]
+        
         vessel_info = df_moving.filter(
-            (col("MMSI") == mmsi_1) | (col("MMSI") == mmsi_2)
+            col("MMSI").isin(all_mmsis)
         ).select(
             "MMSI", "Name", "Ship type", "Length", "Width", "Destination"
         ).distinct()

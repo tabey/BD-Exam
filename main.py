@@ -51,7 +51,6 @@ def verify_outputs():
     expected_files = [
         "results/collision_event.csv",
         "results/collision_trajectory.csv",
-        "results/collision_trajectory.png",
     ]
     
     all_exist = True
@@ -76,15 +75,15 @@ def main():
     if not run_script("analysis.py"):
         print("\nPipeline aborted: analysis.py failed")
         sys.exit(1)
-    
-    # Step 2: Run visualization
-    if not run_script("visualize.py"):
-        print("\nPipeline aborted: visualize.py failed")
-        sys.exit(1)
-    
-    # Step 3: Verify outputs
+
+    # Step 2: Verify outputs
     if not verify_outputs():
         print("\nPipeline completed with missing outputs")
+        sys.exit(1)
+    
+    # Step 3: Run visualization
+    if not run_script("visualize.py"):
+        print("\nPipeline aborted: visualize.py failed")
         sys.exit(1)
     
     # Summary
