@@ -8,7 +8,7 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 2. [Methodology](#methodology)
    - [Data Source](#data-source)
    - [Pipeline Stages](#pipeline-stages)
-   - [Performance Optimizations](performance-optimizations)
+   - [Performance Optimizations](#performance-optimizations)
    - [Collision Criteria](#collision-criteria)
 3. [Usage](#usage)
    - [Docker (Recommended)](#docker-recommended)
