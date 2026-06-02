@@ -4,56 +4,53 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 
 ## Table of Contents
 
-1. [Detected Event](#detected-event)
+1. [Detected Events](#detected-events)
 2. [Methodology](#methodology)
    - [Data Source](#data-source)
    - [Pipeline Stages](#pipeline-stages)
+   - [Performance Optimizations](performance-optimizations)
    - [Collision Criteria](#collision-criteria)
-3. [Data Setup](#data-setup)
-4. [Usage](#usage)
+3. [Usage](#usage)
    - [Docker (Recommended)](#docker-recommended)
    - [Local](#local)
-5. [Output](#output)
+4. [Output](#output)
 
-## Detected Event
+## Detected Events
 
-![collision](results/collision_trajectory.png)
+### Assessment of Potential Collisions
 
-**Incident Timestamp:** 21 December 2025, 13:00:40 UTC  
-**Location:** Baltic Sea (Coordinates: 54.9113°N, 14.8627°E)  
-**Severity Classification:** Near-Miss (Close Quarters Situation)  
-**Data Source:** Automated AIS Pipeline Analysis  
+**Event #2 (2021-12-13): KARIN HOEJ & MV SCOT CARRIER**
+![collision](results/collision_event_2.png)
+- **Vessel 232018267 (Cargo)**: Maintains a steady 12 knots until **02:27:29**, then shows a dramatic, unnatural deceleration sequence: 11.1 → 10.1 → 8.0 → 7.0 → 6.1 → 5.1 → 4.7 → 3.9 → 3.4 → 3.0 knots within ~3 minutes.
+- **Simultaneous course change**: Its COG shifts from ~269° to ~270°, then begins erratic swinging (267°, 263°, 258°, etc.) – consistent with loss of control or evasive action.
+- **Vessel 219021240 (Other)**: Also shows an unnatural speed drop from 6.1 to 10.3 knots with a sharp course change from ~222° to ~258° at the exact same timestamp (**02:27:29**).
 
----
+This **simultaneous, abrupt deceleration and course disruption** in both vessels strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
 
-### 1. Vessel Identification & Status
-The event involved two recreational pleasure craft operating in close proximity under similar navigational conditions:
+**Event #1 (2021-12-29): SILLE BOB & JANNE**
+![collision](results/collision_event_1.png)
+Looking at the behavior:
+- Both pleasure vessels decelerate to 0.0-0.9 knots at the closest point.
+- They remain in extremely close proximity (~3.9m) for an extended period (over 30 minutes).
+- Both show coordinated, gentle turning movements afterward.
 
-| Role | Vessel Name | MMSI | Type | Navigational Status (COLREGs) | Course |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Overtaking (Give-Way)** | ANRI | 219012544 | Pleasure Craft | Overtaking (Rule 13) | Southbound |
-| **Overtaken (Stand-On)** | PROLINER | 219022341 | Pleasure Craft | Being Overtaken (Rule 13) | Southbound |
+This **could** represent:
+1. A low-speed collision between maneuvering pleasure craft
+2. Or a docking maneuver where one vessel comes alongside another
 
----
+The sustained very close proximity and simultaneous near-stop are more characteristic of intentional docking than an accidental high-energy collision.
 
-### 2. Event Dynamics & Trajectory Analysis
-At the recorded timestamp, the analysis pipeline detected a possible collision between the two targets. Both vessels were proceeding on nearly identical southerly headings, creating a longitudinal overtaking scenario.
+**Event #0 (2021-12-24): WINDCAT 43 & GEO OCEAN V**
+![collision](results/collision_event_0.png)
+This appears the most definitive:
+- The HSC's violent 180° turn at speed (22+ knots)
+- Minimum distance of 3.3m
+- Both vessels show extreme erratic movement post-encounter
 
-*   **Minimum Separation:** The vessels converged to a minimum lateral separation of **4.6 meters**. This distance falls well within the threshold for a "close quarters situation," posing a significant risk of collision given the typical maneuverability constraints of pleasure craft in open water.
-*   **AIS Accuracy Context:** The convergence occurred within the margin of error for standard AIS positioning, suggesting the vessels were visually identifiable and likely within direct line-of-sight prior to the maneuver.
-
----
-
-### 3. Maneuver Assessment
-Post-convergence analysis indicates a corrective action taken by the overtaking vessel (**ANRI**) to mitigate collision risk:
-
-*   **Action Taken:** ANRI executed a course alteration of approximately **10° to Port**.
-*   **Compliance Evaluation:** While Rule 13 of the COLREGs mandates that the overtaking vessel keep clear, a port turn in a southbound overtaking scenario is a valid avoidance maneuver provided it does not cross the bow of the stand-on vessel dangerously. The adjustment successfully increased the CPA, resolving the immediate hazard.
-
----
-
-### 4. Operational Context
-This incident highlights the importance of vigilant watchkeeping in recreational boating, particularly in high-traffic zones of the Baltic Sea where pleasure craft often operate. The narrow margin of 4.6 meters suggests a failure in early situational awareness or communication between the skippers, necessitating a last-second evasive action.
+### Final Ranking by Collision Likelihood
+1. **Event #0**: Highest confidence – high-speed encounter with drastic maneuver
+2. **Event #2**: Moderate-high confidence – simultaneous emergency deceleration of both vessels
+3. **Event #1**: Lower confidence – could be collision or docking; needs additional context
 
 ## Methodology
 
@@ -72,6 +69,18 @@ This incident highlights the importance of vigilant watchkeeping in recreational
 7. **Distance Calculation** — Haversine formula between vessel pairs
 8. **Deduplication** — Encounter grouping with 5-minute gap threshold, closest-point selection
 
+### Performance Optimizations
+
+Processing a month of AIS data (tens of millions of records) requires careful resource management. Key optimizations include:
+
+- **PySpark over Pandas** — Distributed processing handles datasets larger than memory, with lazy evaluation avoiding unnecessary computation
+- **Bounding box pre-filter** — Simple lat/lon range comparison eliminates ~95% of records before the expensive Haversine distance calculation
+- **Spatial grid bucketing** — 0.01° grid cells (~1km) constrain the self-join to only compare vessels in the same geographic area, preventing an O(n²) explosion of pairs
+- **Temporal aggregation** — 40-second windows reduce ping frequency noise and dramatically shrink the join space
+- **Strategic caching** — `.persist(StorageLevel.MEMORY_AND_DISK)` at critical boundaries (after filtering, before the join) breaks the lineage chain and avoids recomputing the entire pipeline on each action
+- **Coordinate movement filter** — Simple Euclidean distance between consecutive pings (`sqrt(Δlat² + Δlon²)`) for GPS jump detection, avoiding an additional Haversine computation per record
+- **Intermediate column decomposition** — Breaking the Haversine formula into separate `withColumn` steps prevents deeply nested expression trees that exceed Python's recursion limit and complicate Spark's query optimizer
+
 ### Collision Criteria
 
 | Parameter | Value | Rationale |
@@ -80,19 +89,6 @@ This incident highlights the importance of vigilant watchkeeping in recreational
 | Time tolerance | ≤ 10 seconds | Simultaneous positions |
 | Minimum SOG | > 1.0 knot | Both vessels underway |
 | Encounter gap | > 5 minutes | Separate close-quarters events |
-
-## Data Setup
-
-The pipeline expects AIS data in CSV format within the `data/` directory. 
-
-To download the December 2025 dataset from the Danish Maritime Authority, use the provided script which fetches all files in parallel:
-
-```bash
-chmod +x dl-data.sh
-./dl-data.sh
-```
-
-Alternatively, you can place your own .csv files directly into the `data/` folder. The schema will be automatically inferred from the files present.
 
 ## Usage
 ### Docker (Recommended)
@@ -114,15 +110,13 @@ docker run -it --rm \
 
 Note: The `-v` flags mount your local directories into the container. Ensure your AIS CSV files are in the `data/` folder before running. The output visualization and CSVs will be saved to your local `results/` folder.
 
-To build the image locally from the Dockerfile:
+To build and run the image locally using the Dockerfile:
 
 ```bash
+# Build
 docker build -t ais-collision-detector .
-```
 
-and run it with:
-
-```bash
+# Run
 docker run -it --rm \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/results:/app/results \
@@ -145,5 +139,5 @@ python main.py
 Upon completion, the following files will be generated in the `results/` directory:
 
 - `collision_event.csv` — Collision event details
-- `collision_trajectory.csv` — 20-minute trajectory data (10 min around the event)
-- `collision_trajectory.png` — Visualization with search area overview and trajectory detail
+- `collision_trajectory.csv` — 20-minute trajectory data (10 min around the event) for each event
+- `collision_event_i.png` — Visualizations with search area overview and trajectory detail for each event
