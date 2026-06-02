@@ -24,7 +24,6 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 - **Vessel 232018267 (Cargo)**: Maintains a steady 12 knots until **02:27:29**, then shows a dramatic, unnatural deceleration sequence: 11.1 → 10.1 → 8.0 → 7.0 → 6.1 → 5.1 → 4.7 → 3.9 → 3.4 → 3.0 knots within ~3 minutes.
 - **Simultaneous course change**: Its COG shifts from ~269° to ~270°, then begins erratic swinging (267°, 263°, 258°, etc.) – consistent with loss of control or evasive action.
 - **Vessel 219021240 (Other)**: Also shows an unnatural speed drop from 6.1 to 10.3 knots with a sharp course change from ~222° to ~258° at the exact same timestamp (**02:27:29**).
-
 This **simultaneous, abrupt deceleration and course disruption** in both vessels strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
 
 **Event #1 (2021-12-29): SILLE BOB & JANNE**
@@ -93,9 +92,7 @@ Processing a month of AIS data (tens of millions of records) requires careful re
 ## Usage
 ### Docker (Recommended)
 
-Pull the image from Docker Hub and run the pipeline with your local data and results directories mounted
-
-https://hub.docker.com/r/tabeh/ais-collision-detector
+Pull the image from Docker Hub ([link](https://hub.docker.com/r/tabeh/ais-collision-detector)) and run the pipeline with your local data and results directories mounted
 
 ```bash
 # Pull the image
