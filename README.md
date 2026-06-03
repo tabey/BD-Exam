@@ -5,15 +5,16 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
 ## Table of Contents
 
 1. [Detected Events](#detected-events)
-2. [Methodology](#methodology)
+   - [Ranking](#final-ranking-by-collision-likelihood)
+3. [Methodology](#methodology)
    - [Data Source](#data-source)
    - [Pipeline Stages](#pipeline-stages)
    - [Performance Optimizations](#performance-optimizations)
    - [Collision Criteria](#collision-criteria)
-3. [Usage](#usage)
+4. [Usage](#usage)
    - [Docker (Recommended)](#docker-recommended)
    - [Local](#local)
-4. [Output](#output)
+5. [Output](#output)
 
 ## Detected Events
 
@@ -33,6 +34,8 @@ The fact that **both vessels essentially stop moving** (SOG ~0.1-0.8 knots) for 
 - **Station-keeping** near a fixed point
 - **Very low-speed near-miss**
 
+---
+
 **Event #1 (2021-12-29): SILLE BOB & JANNE**
 
 ![collision](results/collision_event_1.png)
@@ -47,6 +50,8 @@ This **could** represent:
 2. Or a docking maneuver where one vessel comes alongside another
 
 The sustained very close proximity near shore and simultaneous near-stop are more characteristic of intentional docking than an accidental high-energy collision.
+
+---
 
 **Event #2 (2021-12-13): KARIN HOEJ & MV SCOT CARRIER**
 
@@ -64,6 +69,8 @@ Possible reasons for AIS signal loss at that instant:
    - **Equipment malfunction** coinciding exactly with the encounter (statistically improbable)
 
 This **simultaneous, abrupt deceleration and course disruption** strongly suggests an impact. The cargo vessel's rapid slowdown from 12 to 3 knots isn't normal operation; it's indicative of emergency maneuvering or collision damage.
+
+---
 
 ### Final Ranking by Collision Likelihood
 
