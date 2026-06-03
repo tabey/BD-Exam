@@ -39,7 +39,7 @@ The fact that **both vessels essentially stop moving** (SOG ~0.1-0.8 knots) for 
 
 Looking at the behavior:
 - Both pleasure vessels decelerate to 0.0-0.9 knots at the closest point.
-- They remain in extremely close proximity (~3.9m) for an extended period (over 30 minutes).
+- They remain in extremely close proximity (~3.9m) for an extended period.
 - Both show coordinated, gentle turning movements afterward.
 
 This **could** represent:
