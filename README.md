@@ -112,6 +112,8 @@ Processing a month of AIS data (tens of millions of records) requires careful re
 | Minimum SOG | > 1.0 knot | Both vessels underway |
 | Encounter gap | > 5 minutes | Separate close-quarters events |
 
+**Note:** Due to the mass of these vessels they possess tremendous kinetic energy even at low speeds, so proximity as the main indicator can produce false positives.
+
 ## Usage
 ### Docker (Recommended)
 
