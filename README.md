@@ -132,8 +132,8 @@ docker pull tabeh/ais-collision-detector:latest
 
 # Run the pipeline
 docker run -it --rm \
-  -v \$(pwd)/data:/app/data \
-  -v \$(pwd)/results:/app/results \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/results:/app/results \
   tabeh/ais-collision-detector:latest
 ```
 
