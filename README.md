@@ -8,11 +8,11 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
    - [Ranking](#final-ranking-by-collision-likelihood)
 3. [Methodology](#methodology)
    - [Data Source](#data-source)
+   - [Project Tree](#project-tree)
    - [Pipeline Stages](#pipeline-stages)
    - [Performance Optimizations](#performance-optimizations)
    - [Collision Criteria](#collision-criteria)
    - [Limitations](#limitations)
-   - [Project Tree](#project-tree)
 4. [Usage](#usage)
    - [Docker (Recommended)](#docker-recommended)
    - [Local](#local)
@@ -89,49 +89,6 @@ This **simultaneous, abrupt deceleration and course disruption** strongly sugges
 - 31 days of AIS data (December 2021) from the Danish Maritime Authority
 - Search area: 50 nautical mile radius centered on 55.225°N, 14.245°E
 
-### Pipeline Stages
-
-1. **Spatial Filtering** — Bounding box pre-filter followed by Haversine distance calculation
-2. **Data Quality** — Null/invalid coordinate removal, SOG range validation
-3. **GPS Jump Detection** — Coordinate movement thresholds to filter AIS noise
-4. **Vessel Filtering** — Stationary vessel removal (SOG < 1.0 knot), service vessel exclusion (pilot, tug, SAR, etc.), fishing vessel exclusion
-5. **Temporal Aggregation** — 40-second windows to reduce ping frequency noise
-6. **Spatiotemporal Join** — Self-join on time bucket and spatial grid (0.01° cells)
-7. **Distance Calculation** — Haversine formula between vessel pairs
-8. **Deduplication** — Encounter grouping with 5-minute gap threshold, closest-point selection
-
-### Performance Optimizations
-
-Processing a month of AIS data (tens of millions of records) requires careful resource management. Key optimizations include:
-
-- **PySpark over Pandas** — Distributed processing handles datasets larger than memory, with lazy evaluation avoiding unnecessary computation
-- **Bounding box pre-filter** — Simple lat/lon range comparison eliminates ~95% of records before the expensive Haversine distance calculation
-- **Spatial grid bucketing** — 0.01° grid cells (~1km) constrain the self-join to only compare vessels in the same geographic area, preventing an O(n²) explosion of pairs
-- **Temporal aggregation** — 40-second windows reduce ping frequency noise and dramatically shrink the join space
-- **Strategic caching** — `.persist(StorageLevel.MEMORY_AND_DISK)` at critical boundaries (after filtering, before the join) breaks the lineage chain and avoids recomputing the entire pipeline on each action
-- **Coordinate movement filter** — Simple Euclidean distance between consecutive pings (`sqrt(Δlat² + Δlon²)`) for GPS jump detection, avoiding an additional Haversine computation per record
-- **Intermediate column decomposition** — Breaking the Haversine formula into separate `withColumn` steps prevents deeply nested expression trees that exceed Python's recursion limit and complicate Spark's query optimizer
-
-Performance will vary by device, but on a Fedora Linux 43 laptop with an i7-13650HX and 16 GB of RAM, the entire pipeline takes roughly 15 minutes to execute.
-
-### Collision Criteria
-
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Minimum SOG | > 1.0 knot | Both vessels underway |
-| Temporal proximity | 40 seconds | Must be in the same time bucket |
-| Spatial bucketing | 0.01° | Pre-filter before exact distance |
-| Collision distance | ≤ 5 meters | Within AIS accuracy range |
-| Encounter gap | > 5 minutes | Keep only closest encounter |
-
-In summary: a "collision" is defined as two non-service, moving vessels passing within 5 meters of each other within the same 40-second window. The results are deduplicated with the encouter gap.
-
-### Limitations
-
-- Due to a lack of extensive domain knowledge, parameter choices are heavily AI-guided
-- The temporal aggregation may split close encounters across time boundaries
-- The mass of these vessels makes them possess tremendous kinetic energy even at low speeds and the use of proximity as the main indicator can produce false positives
-
 ### Project Tree
 
 ```
@@ -181,6 +138,49 @@ In summary: a "collision" is defined as two non-service, moving vessels passing 
 │   └── collision_trajectory.csv
 └── visualize.py
 ```
+
+### Pipeline Stages
+
+1. **Spatial Filtering** — Bounding box pre-filter followed by Haversine distance calculation
+2. **Data Quality** — Null/invalid coordinate removal, SOG range validation
+3. **GPS Jump Detection** — Coordinate movement thresholds to filter AIS noise
+4. **Vessel Filtering** — Stationary vessel removal (SOG < 1.0 knot), service vessel exclusion (pilot, tug, SAR, etc.), fishing vessel exclusion
+5. **Temporal Aggregation** — 40-second windows to reduce ping frequency noise
+6. **Spatiotemporal Join** — Self-join on time bucket and spatial grid (0.01° cells)
+7. **Distance Calculation** — Haversine formula between vessel pairs
+8. **Deduplication** — Encounter grouping with 5-minute gap threshold, closest-point selection
+
+### Performance Optimizations
+
+Processing a month of AIS data (tens of millions of records) requires careful resource management. Key optimizations include:
+
+- **PySpark over Pandas** — Distributed processing handles datasets larger than memory, with lazy evaluation avoiding unnecessary computation
+- **Bounding box pre-filter** — Simple lat/lon range comparison eliminates ~95% of records before the expensive Haversine distance calculation
+- **Spatial grid bucketing** — 0.01° grid cells (~1km) constrain the self-join to only compare vessels in the same geographic area, preventing an O(n²) explosion of pairs
+- **Temporal aggregation** — 40-second windows reduce ping frequency noise and dramatically shrink the join space
+- **Strategic caching** — `.persist(StorageLevel.MEMORY_AND_DISK)` at critical boundaries (after filtering, before the join) breaks the lineage chain and avoids recomputing the entire pipeline on each action
+- **Coordinate movement filter** — Simple Euclidean distance between consecutive pings (`sqrt(Δlat² + Δlon²)`) for GPS jump detection, avoiding an additional Haversine computation per record
+- **Intermediate column decomposition** — Breaking the Haversine formula into separate `withColumn` steps prevents deeply nested expression trees that exceed Python's recursion limit and complicate Spark's query optimizer
+
+Performance will vary by device, but on a Fedora Linux 43 laptop with an i7-13650HX and 16 GB of RAM, the entire pipeline takes roughly 15 minutes to execute.
+
+### Collision Criteria
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| Minimum SOG | > 1.0 knot | Both vessels underway |
+| Temporal proximity | 40 seconds | Must be in the same time bucket |
+| Spatial bucketing | 0.01° | Pre-filter before exact distance |
+| Collision distance | ≤ 5 meters | Within AIS accuracy range |
+| Encounter gap | > 5 minutes | Keep only closest encounter |
+
+In summary: a "collision" is defined as two non-service, moving vessels passing within 5 meters of each other within the same 40-second window. The results are deduplicated with the encounter gap.
+
+### Limitations
+
+- Due to a lack of extensive domain knowledge, parameter choices are heavily AI-guided
+- The temporal aggregation may split close encounters across time boundaries
+- The mass of these vessels makes them possess tremendous kinetic energy even at low speeds and the use of proximity as the main indicator can produce false positives
 
 ## Usage
 ### Docker (Recommended)
