@@ -114,9 +114,13 @@ Processing a month of AIS data (tens of millions of records) requires careful re
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| Collision distance | ≤ 5 meters | Within AIS accuracy range |
 | Minimum SOG | > 1.0 knot | Both vessels underway |
-| Encounter gap | > 5 minutes | Separate close-quarters events |
+| Temporal proximity | 40 seconds | Must be in the same time bucket |
+| Spatial bucketing | 0.01° | Pre-filter before exact distance |
+| Collision distance | ≤ 5 meters | Within AIS accuracy range |
+| Encounter gap | > 5 minutes | Keep only closest encounter |
+
+In summary: a "collision" is defined as two non-service, moving vessels passing within 5 meters of each other within the same 40-second window.
 
 **Note:** Due to the mass of these vessels they possess tremendous kinetic energy even at low speeds and the use of proximity as the main indicator can produce false positives.
 
