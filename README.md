@@ -115,7 +115,6 @@ Processing a month of AIS data (tens of millions of records) requires careful re
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
 | Collision distance | ≤ 5 meters | Within AIS accuracy range |
-| Time tolerance | ≤ 10 seconds | Simultaneous positions |
 | Minimum SOG | > 1.0 knot | Both vessels underway |
 | Encounter gap | > 5 minutes | Separate close-quarters events |
 
