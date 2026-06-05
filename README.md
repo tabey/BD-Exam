@@ -11,6 +11,8 @@ A PySpark pipeline for detecting vessel collision events and near-misses using A
    - [Pipeline Stages](#pipeline-stages)
    - [Performance Optimizations](#performance-optimizations)
    - [Collision Criteria](#collision-criteria)
+   - [Limitations](#limitations)
+   - [Project Tree](#project-tree)
 4. [Usage](#usage)
    - [Docker (Recommended)](#docker-recommended)
    - [Local](#local)
@@ -110,6 +112,8 @@ Processing a month of AIS data (tens of millions of records) requires careful re
 - **Coordinate movement filter** — Simple Euclidean distance between consecutive pings (`sqrt(Δlat² + Δlon²)`) for GPS jump detection, avoiding an additional Haversine computation per record
 - **Intermediate column decomposition** — Breaking the Haversine formula into separate `withColumn` steps prevents deeply nested expression trees that exceed Python's recursion limit and complicate Spark's query optimizer
 
+Performance will vary by device, but on a Fedora Linux 43 laptop with an i7-13650HX and 16 GB of RAM, the entire pipeline takes roughly 15 minutes to execute.
+
 ### Collision Criteria
 
 | Parameter | Value | Rationale |
@@ -120,9 +124,63 @@ Processing a month of AIS data (tens of millions of records) requires careful re
 | Collision distance | ≤ 5 meters | Within AIS accuracy range |
 | Encounter gap | > 5 minutes | Keep only closest encounter |
 
-In summary: a "collision" is defined as two non-service, moving vessels passing within 5 meters of each other within the same 40-second window.
+In summary: a "collision" is defined as two non-service, moving vessels passing within 5 meters of each other within the same 40-second window. The results are deduplicated with the encouter gap.
 
-**Note:** Due to the mass of these vessels they possess tremendous kinetic energy even at low speeds and the use of proximity as the main indicator can produce false positives.
+### Limitations
+
+- Due to a lack of extensive domain knowledge, parameter choices are heavily AI-guided
+- The temporal aggregation may split close encounters across time boundaries
+- The mass of these vessels makes them possess tremendous kinetic energy even at low speeds and the use of proximity as the main indicator can produce false positives
+
+### Project Tree
+
+```
+.
+├── analysis.py
+├── data
+│   ├── aisdk-2021-12-01.csv
+│   ├── aisdk-2021-12-02.csv
+│   ├── aisdk-2021-12-03.csv
+│   ├── aisdk-2021-12-04.csv
+│   ├── aisdk-2021-12-05.csv
+│   ├── aisdk-2021-12-06.csv
+│   ├── aisdk-2021-12-07.csv
+│   ├── aisdk-2021-12-08.csv
+│   ├── aisdk-2021-12-09.csv
+│   ├── aisdk-2021-12-10.csv
+│   ├── aisdk-2021-12-11.csv
+│   ├── aisdk-2021-12-12.csv
+│   ├── aisdk-2021-12-13.csv
+│   ├── aisdk-2021-12-14.csv
+│   ├── aisdk-2021-12-15.csv
+│   ├── aisdk-2021-12-16.csv
+│   ├── aisdk-2021-12-17.csv
+│   ├── aisdk-2021-12-18.csv
+│   ├── aisdk-2021-12-19.csv
+│   ├── aisdk-2021-12-20.csv
+│   ├── aisdk-2021-12-21.csv
+│   ├── aisdk-2021-12-22.csv
+│   ├── aisdk-2021-12-23.csv
+│   ├── aisdk-2021-12-24.csv
+│   ├── aisdk-2021-12-25.csv
+│   ├── aisdk-2021-12-26.csv
+│   ├── aisdk-2021-12-27.csv
+│   ├── aisdk-2021-12-28.csv
+│   ├── aisdk-2021-12-29.csv
+│   ├── aisdk-2021-12-30.csv
+│   └── aisdk-2021-12-31.csv
+├── Dockerfile
+├── main.py
+├── README.md
+├── requirements.txt
+├── results
+│   ├── collision_event_0.png
+│   ├── collision_event_1.png
+│   ├── collision_event_2.png
+│   ├── collision_event.csv
+│   └── collision_trajectory.csv
+└── visualize.py
+```
 
 ## Usage
 ### Docker (Recommended)
